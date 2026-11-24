@@ -1,23 +1,21 @@
 generator client {
-  provider = "prisma-client" // Важно: новый провайдер для v7
-  output   = "../generated/prisma" // Обязательное поле в v7
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
-  // Поле url здесь больше не нужно, оно перенесено в конфиг
+  provider = "postgresql"
 }
 
-// Ваши модели (Product, Movement) остаются здесь без изменений
 model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
-  category  String
-  quantity  Int      @default(0)
-  isArchived Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  movements Movement[]
+  id         Int        @id @default(autoincrement())
+  name       String
+  category   String
+  quantity   Int        @default(0)
+  isArchived Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  movements  Movement[]
 }
 
 model Movement {

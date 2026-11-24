@@ -1,9 +1,9 @@
-import 'dotenv/config' // Если используете .env
+import 'dotenv/config'
 import { defineConfig } from 'prisma/config'
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   datasource: {
-    url: 'file:./dev.db', // Путь к файлу базы данных
+    url: process.env.DATABASE_URL_UNPOOLED,
   },
 })

@@ -1,14 +1,15 @@
-import { PrismaClient } from '../generated/prisma/client' // Путь к сгенерированному клиенту
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import 'dotenv/config'
+import { PrismaClient } from '../generated/prisma/client'
+import { PrismaNeon } from '@prisma/adapter-neon'
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? 'file:./dev.db',
-})
+const connectionString = process.env.DATABASE_URL!
+
+const adapter = new PrismaNeon({ connectionString })
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 export const prisma =
   globalForPrisma.prisma ||
-  new PrismaClient({ adapter }) // Передаем адаптер сюда
+  new PrismaClient({ adapter })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

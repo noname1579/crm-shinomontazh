@@ -460,6 +460,7 @@ export type MovementCreateOrConnectWithoutProductInput = {
 
 export type MovementCreateManyProductInputEnvelope = {
   data: Prisma.MovementCreateManyProductInput | Prisma.MovementCreateManyProductInput[]
+  skipDuplicates?: boolean
 }
 
 export type MovementUpsertWithWhereUniqueWithoutProductInput = {
@@ -1249,6 +1250,7 @@ export type MovementCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * The data used to create many Movements.
    */
   data: Prisma.MovementCreateManyInput | Prisma.MovementCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1267,6 +1269,7 @@ export type MovementCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extens
    * The data used to create many Movements.
    */
   data: Prisma.MovementCreateManyInput | Prisma.MovementCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */
