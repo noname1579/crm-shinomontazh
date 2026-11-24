@@ -8,6 +8,12 @@ const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 export const metadata: Metadata = {
   title: 'Иваныч Шиномонтаж',
   description: 'CRM для управления складом и аналитикой',
+  manifest: '/manifest.webmanifest', // Ссылка на манифест
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Иваныч',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
