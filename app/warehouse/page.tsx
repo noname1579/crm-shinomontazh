@@ -1,3 +1,5 @@
+import { Suspense } from 'react'
+import { connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { Card, Input, Button, Badge, EmptyState } from '@/components/ui'
@@ -22,7 +24,6 @@ async function archiveProduct(formData: FormData) {
   const id = parseInt(formData.get('id') as string)
   if (!id) return
 
-  // Вместо удаления просто ставим флаг
   await prisma.product.update({ 
     where: { id }, 
     data: { isArchived: true } 
@@ -32,34 +33,17 @@ async function archiveProduct(formData: FormData) {
   revalidatePath('/')
 }
 
-export default async function WarehousePage() {
-  // Показываем только неархивные товары
+// Выносим динамическую часть в отдельный компонент
+async function WarehouseContent() {
+  await connection() // Говорим Next.js, что данные должны запрашиваться при каждом заходе
+
   const products = await prisma.product.findMany({ 
     where: { isArchived: false },
     orderBy: { createdAt: 'desc' } 
   })
 
   return (
-    <div className="space-y-8">
-      <div className="animate-fade-in-up">
-        <h1 className="bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
-          Склад
-        </h1>
-        <p className="mt-1 text-slate-500">Управление номенклатурой и остатками</p>
-      </div>
-
-      <Card className="animate-fade-in-up stagger-1 relative z-10">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
-          <span className="text-xl">➕</span> Добавить товар
-        </h2>
-        <RefreshForm action={addProduct} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Input name="name" placeholder="Название (напр. Шина R16)" required />
-          <CategorySelect name="category" />
-          <Input name="quantity" type="number" placeholder="Количество" min="0" required />
-          <Button type="submit">+ Добавить</Button>
-        </RefreshForm>
-      </Card>
-
+    <>
       {products.length === 0 ? (
         <EmptyState icon="📦" title="Склад пуст" description="Добавьте первый товар через форму выше" />
       ) : (
@@ -126,6 +110,41 @@ export default async function WarehousePage() {
           </div>
         </Card>
       )}
+    </>
+  )
+}
+
+function WarehouseSkeleton() {
+  return (
+    <div className="shimmer h-64 rounded-2xl" />
+  )
+}
+
+export default function WarehousePage() {
+  return (
+    <div className="space-y-8">
+      <div className="animate-fade-in-up">
+        <h1 className="bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+          Склад
+        </h1>
+        <p className="mt-1 text-slate-500">Управление номенклатурой и остатками</p>
+      </div>
+
+      <Card className="animate-fade-in-up stagger-1 relative z-10">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <span className="text-xl">➕</span> Добавить товар
+        </h2>
+        <RefreshForm action={addProduct} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Input name="name" placeholder="Название (напр. Шина R16)" required />
+          <CategorySelect name="category" />
+          <Input name="quantity" type="number" placeholder="Количество" min="0" required />
+          <Button type="submit">+ Добавить</Button>
+        </RefreshForm>
+      </Card>
+
+      <Suspense fallback={<WarehouseSkeleton />}>
+        <WarehouseContent />
+      </Suspense>
     </div>
   )
 }

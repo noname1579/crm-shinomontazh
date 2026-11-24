@@ -1,3 +1,5 @@
+import { Suspense } from 'react'
+import { connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { Card, Input, Button, Badge, EmptyState } from '@/components/ui'
@@ -35,16 +37,94 @@ async function createMovement(formData: FormData) {
   }
 }
 
-export default async function MovementsPage() {
-  const [products, movements] = await Promise.all([
-    // Добавлен фильтр: только неархивные товары
-    prisma.product.findMany({ 
-      where: { isArchived: false }, 
-      orderBy: { name: 'asc' } 
-    }),
-    prisma.movement.findMany({ include: { product: true }, orderBy: { date: 'desc' }, take: 50 }),
-  ])
+// Компонент для формы (динамический, так как тянет товары)
+async function MovementsForm() {
+  await connection()
+  const products = await prisma.product.findMany({ 
+    where: { isArchived: false }, 
+    orderBy: { name: 'asc' } 
+  })
 
+  return (
+    <RefreshForm action={createMovement} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <ProductSelect name="productId" products={products} />
+      <TypeSelect name="type" defaultValue="IN" />
+      <Input name="quantity" type="number" min="1" placeholder="Кол-во" required />
+      <Input name="comment" placeholder="Комментарий" />
+      <Button type="submit">Выполнить</Button>
+    </RefreshForm>
+  )
+}
+
+// Компонент для таблицы
+async function MovementsTable() {
+  await connection()
+  const movements = await prisma.movement.findMany({ 
+    include: { product: true }, 
+    orderBy: { date: 'desc' }, 
+    take: 50 
+  })
+
+  if (movements.length === 0) {
+    return <EmptyState icon="📝" title="Нет операций" description="Сделайте первый приход или расход через форму выше" />
+  }
+
+  return (
+    <Card className="animate-fade-in-up stagger-2 overflow-hidden p-0">
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/50">
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Дата</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Товар</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Тип</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Кол-во</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Комментарий</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {movements.map((m, i) => (
+              <tr
+                key={m.id}
+                className="row-hover animate-fade-in"
+                style={{ animationDelay: `${i * 30}ms` }}
+              >
+                <td className="px-6 py-4 text-sm text-slate-500">
+                  {new Date(m.date).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </td>
+                <td className="px-6 py-4 font-medium text-slate-900">{m.product.name}</td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      m.type === 'IN'
+                        ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200'
+                        : 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200'
+                    }`}
+                  >
+                    {m.type === 'IN' ? (
+                      <ArrowInIcon className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowOutIcon className="h-3.5 w-3.5" />
+                    )}
+                    {m.type === 'IN' ? 'Приход' : 'Расход'}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`text-lg font-bold ${m.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {m.type === 'IN' ? '+' : '-'}{m.quantity}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-500">{m.comment || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  )
+}
+
+export default function MovementsPage() {
   return (
     <div className="space-y-8">
       <div className="animate-fade-in-up">
@@ -54,74 +134,19 @@ export default async function MovementsPage() {
         <p className="mt-1 text-slate-500">Приход и расход товаров</p>
       </div>
 
-      <Card className="animate-fade-in-up stagger-1 relative z-10">
+      {/* overflow-visible критически важен, чтобы список товаров не обрезался */}
+      <Card className="animate-fade-in-up stagger-1 relative z-10 overflow-visible">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
           <span className="text-xl">⚡</span> Новая операция
         </h2>
-        <RefreshForm action={createMovement} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <ProductSelect name="productId" products={products} />
-          <TypeSelect name="type" defaultValue="IN" />
-          <Input name="quantity" type="number" min="1" placeholder="Кол-во" required />
-          <Input name="comment" placeholder="Комментарий" />
-          <Button type="submit">Выполнить</Button>
-        </RefreshForm>
+        <Suspense fallback={<div className="shimmer h-11 rounded-xl" />}>
+          <MovementsForm />
+        </Suspense>
       </Card>
 
-      {movements.length === 0 ? (
-        <EmptyState icon="📝" title="Нет операций" description="Сделайте первый приход или расход через форму выше" />
-      ) : (
-        <Card className="animate-fade-in-up stagger-2 overflow-hidden p-0">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/50">
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Дата</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Товар</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Тип</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Кол-во</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Комментарий</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {movements.map((m, i) => (
-                  <tr
-                    key={m.id}
-                    className="row-hover animate-fade-in"
-                    style={{ animationDelay: `${i * 30}ms` }}
-                  >
-                    <td className="px-6 py-4 text-sm text-slate-500">
-                      {new Date(m.date).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-900">{m.product.name}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          m.type === 'IN'
-                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200'
-                            : 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200'
-                        }`}
-                      >
-                        {m.type === 'IN' ? (
-                          <ArrowInIcon className="h-3.5 w-3.5" />
-                        ) : (
-                          <ArrowOutIcon className="h-3.5 w-3.5" />
-                        )}
-                        {m.type === 'IN' ? 'Приход' : 'Расход'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-lg font-bold ${m.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {m.type === 'IN' ? '+' : '-'}{m.quantity}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{m.comment || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      <Suspense fallback={<div className="shimmer h-64 rounded-2xl" />}>
+        <MovementsTable />
+      </Suspense>
     </div>
   )
 }

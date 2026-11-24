@@ -25,7 +25,6 @@ export function ProductSelect({ name, products }: { name: string; products: Prod
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // При открытии фокусируемся на поиске и сбрасываем его
   useEffect(() => {
     if (isOpen) {
       setSearch('')
@@ -41,7 +40,8 @@ export function ProductSelect({ name, products }: { name: string; products: Prod
   const selected = products.find((p) => p.id.toString() === value)
 
   return (
-    <div className="relative z-50" ref={ref}>
+    // z-[60] гарантирует, что этот блок будет выше соседних
+    <div className="relative z-[60]" ref={ref}>
       <input type="hidden" name={name} value={value} required />
 
       <button
@@ -84,7 +84,6 @@ export function ProductSelect({ name, products }: { name: string; products: Prod
 
       {isOpen && (
         <div className="absolute left-0 right-0 top-full z-[100] mt-2 flex max-h-72 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl animate-fade-in">
-          {/* Поле поиска */}
           <div className="border-b border-slate-100 p-2">
             <input
               ref={inputRef}
@@ -96,7 +95,6 @@ export function ProductSelect({ name, products }: { name: string; products: Prod
             />
           </div>
 
-          {/* Список опций */}
           <div className="overflow-y-auto p-1">
             {filteredProducts.length === 0 ? (
               <div className="px-3 py-4 text-center text-sm text-slate-500">

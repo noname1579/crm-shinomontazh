@@ -6,8 +6,8 @@ import { Sidebar, MobileNav } from '@/components/Sidebar'
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: 'ШиноСклад — CRM для шиномонтажа',
-  description: 'Учёт склада и аналитика',
+  title: 'Иваныч Шиномонтаж',
+  description: 'CRM для управления складом и аналитикой',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

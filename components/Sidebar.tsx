@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { JournalIcon } from '@/components/icons'
+import { JournalIcon, TireIcon } from '@/components/icons'
 
 const navItems = [
   { href: '/', label: 'Дашборд', icon: '📊' },
@@ -17,12 +17,13 @@ export function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200/80 bg-white/70 backdrop-blur-xl lg:flex">
       <div className="flex h-16 items-center gap-3 border-b border-slate-200/80 px-6">
-        <div className="animate-pulse-glow flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg shadow-lg shadow-blue-500/40">
-          🛞
+        <div className="animate-pulse-glow flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/40">
+          <TireIcon className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-900">ШиноСклад</p>
-          <p className="text-xs text-slate-400">CRM v1.0</p>
+          {/* Обновленное название */}
+          <p className="text-sm font-bold text-slate-900">Иваныч</p>
+          <p className="text-xs text-slate-400">Шиномонтаж CRM</p>
         </div>
       </div>
 
